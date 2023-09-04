@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 
-from .router.health import health_v1
+from .router.router import rtr
+from .service import strategies
 
 app = FastAPI()
 
-app.include_router(health_v1)
+app.include_router(rtr)
