@@ -11,11 +11,7 @@ from app.schema.response import employee_details
 from fastapi import Query, Request
 from fastapi_listing.filters import generic_filters
 
-from fastapi.params import Param
-
-rtr = APIRouter(
-    prefix=""
-)
+rtr = APIRouter(prefix="")
 
 
 def get_db() -> Session:
@@ -26,7 +22,9 @@ def get_db() -> Session:
     for the sake of simplicity and testing purpose I'm replicating this behaviour in this naive way.
     :return: Session
     """
-    engine = create_engine("mysql://root:123456@127.0.0.1:3307/employees", pool_pre_ping=1)
+    engine = create_engine(
+        "mysql://root:123456@127.0.0.1:3307/employees", pool_pre_ping=1
+    )
     sess = Session(bind=engine)
     return sess
 
@@ -46,15 +44,32 @@ def get_employees(request: Request, db=Depends(get_db)):
     dao = EmployeeDao(read_db=db)
     filter = request.query_params.get("filter")
     paginator = request.query_params.get("pagination")
-    return FastapiListing(dao=dao, pydantic_serializer=employee_details.EmployeeListDetails
-                          ).get_response(MetaInfo(default_srt_on="emp_no", filter_mapper=emp_filter_mapper,
-                                                  filter=filter, pagination=paginator))
+    return FastapiListing(
+        dao=dao, pydantic_serializer=employee_details.EmployeeListDetails
+    ).get_response(
+        MetaInfo(
+            default_srt_on="emp_no",
+            filter_mapper=emp_filter_mapper,
+            filter=filter,
+            pagination=paginator,
+        )
+    )
 
 
-@rtr.get("/managers/{manager_id:int}/employees", response_model=employee_details.CustomListingPage[employee_details.EmployeeListDetails])
+@rtr.get(
+    "/managers/{manager_id:int}/employees",
+    response_model=employee_details.CustomListingPage[
+        employee_details.EmployeeListDetails
+    ],
+)
 def get_employees_by_manager_id(request: Request, manager_id: int, db=Depends(get_db)):
     """Employees list by employee manager"""
     dao = EmployeeDao(read_db=db)
-    meta_info = MetaInfo(default_srt_on="emp_no", query_strategy="emp_qry_by_manager", manager_id=manager_id, allow_count_query_by_paginator=False)
+    meta_info = MetaInfo(
+        default_srt_on="emp_no",
+        query_strategy="emp_qry_by_manager",
+        manager_id=manager_id,
+        allow_count_query_by_paginator=False,
+    )
     resp = FastapiListing(request=request, dao=dao).get_response(meta_info)
     return resp
